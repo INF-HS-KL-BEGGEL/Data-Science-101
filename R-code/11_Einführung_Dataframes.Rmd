@@ -1,0 +1,155 @@
+---
+title: "Einführung Dataframes"
+author: "Bastian Beggel"
+output:
+  html_document: 
+    toc: yes
+    toc_float: yes
+    fig_caption: yes
+    highligh: pygments
+    theme: cosmo
+    number_sections: yes
+  html_notebook:
+    highlight: pygments
+    number_sections: yes
+    theme: cosmo
+    toc: yes
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=TRUE, echo=TRUE, message=FALSE}
+#knitr::opts_chunk$set(echo = TRUE)
+ 
+#Vor der ersten Ausfürung müssen die Pakete installiert werden. Das kann bis zu 10 Minuten dauern. Bitte installieren Sie die Packages über diesen Befehl und nicht über RStudio. 
+#install.packages(c("ggplot2", "knitr","rmarkdown","markdown","colorspace"), type= "binary")
+
+
+# Arbeiten mit RStudio 
+# STRG +SHIFT + RETURN = ganzer chunk
+# STRG + RETURN = Zeile Ausführen / markierten Bereich ausführen
+
+# Rmd bearbeiten
+library(knitr)
+library(rmarkdown)
+library(markdown)  
+
+# plots 
+library(ggplot2)
+library(colorspace)
+
+# Farbpaletten
+library(RColorBrewer)
+
+# Schöne Farbpalette definieren
+myPalette <- brewer.pal(5, "YlGn")
+# Ausgabe von double-Werte mit  zwei Stellen hinter dem Komma
+options(digits=3)
+```
+
+# Daten
+
+Als Beispieldaten verwenden wir den Datensatz *heart_failure*. Die Daten
+sind
+(Kaggle)[<https://www.kaggle.com/datasets/fedesoriano/heart-failure-prediction>]
+entnommen.
+
+Liegen die meisten Merkmalsausprägungen nur mit geringen Häufigkeiten
+vor und ist die Skala kardinal (Zahlenwerte), dann können Klassen
+gebildet und Histogramme dargestellt werden.
+
+Wir lesen die Daten mit Hilfe der Funktion *read.csv* (wenn Datenfelder
+mit Komma getrennt) ein.
+
+```{r daten, message=FALSE, echo=TRUE}
+
+## laden der Datensatz vom aktuellen Verzeichnis
+heart_failure <- read.csv("heart_failure.csv")
+
+
+```
+
+Anschließend überprüfen wir, ob die Daten korrekt eingelesen wurden. Wir
+müssen bei dem *heart_failure* Datensatz 918 Werte erhalten haben, wovon
+wir uns mit der Funktion *nrow* überzeugen. Zudem soll der Datensatz 12
+Spalten haben.
+
+```{r check rows, message=FALSE, echo=TRUE}
+nrow(heart_failure)
+
+ncol(heart_failure)
+
+
+
+```
+
+Nun betrachten wir die Spalten (columns), welche in den Datensätzen zur
+Verfühgung stehen. Hierzu verwenden wir die Funktion *colnames*. Der
+Datensatz *heart_failure* hat 12 Spalten.
+
+```{r check cols, message=FALSE, echo=TRUE}
+# Spaltennamen
+colnames(heart_failure)
+
+# Die ersten 5 Zeilen
+heart_failure[1:5,]
+
+
+```
+
+# Das Slicing in R
+
+Das *Slicing* in R ist ein sehr elementares Programmierkonzept. Beim
+Slicing geht es darum aus Daten (Dataframe, Matrix, Vektor) genau die
+Daten (Zeilen und Spalten) zu extrahieren, welche benötigt werden.
+Hierfür werden die eckigen Klammern "[,]" benötigt. Vor dem Komma können
+die Zeilen und nach dem Komma können die Spalten bei einem Dataframe
+oder einer Matrix ausgewählt werden.
+
+```{r}
+
+## Wähle nur die ersten drei Zeilen aus 
+heart_failure [10:30, ]
+
+
+## Wähle nur die ersten drei Spalten aus 
+heart_failure [,1:3 ]
+
+
+## Wähle nur die ersten 5 Zeilen und 1., 3. und 5. Spalte aus 
+heart_failure [1:5, c(1,3,5) ]
+
+## Die Spalten lassen sich auch über die Spaltennamen auswählen
+heart_failure [1:5, c("Age","Sex","Cholesterol") ]
+
+
+# Die Zeilen lassen sich auch über die subset Funktion auswählen. Hierbei kann eine Bedingung an die Zeilenauswahl formuliert werden. Hier werden alle Patienten mit einem alter von 31 ausgewählt.
+subset(heart_failure, Age == 35 & Sex == 'M')
+
+
+# Eine Spalte lässt sich auch über die $-Syntax auswählen. Dadruch entsteht dann ein Vektor mit allen Einträgen genau dieser Spalte. 
+heart_failure$Age
+heart_failure$RestingBP
+
+# Elemente eines Vektors auswählen. Hier werden die ersten 10 Elemente des Vektors heart_failure$Age selektiert. 
+heart_failure$Age [1:10]
+
+```
+
+
+
+
+# Arbeiten mit RStudio 
+ STRG +SHIFT + RETURN = ganzer chunk
+ STRG + RETURN = Zeile Ausführen / markierten Bereich ausführen
+
+```{r}
+
+x <- 2 
+
+print (x+2)
+```
+
+
+

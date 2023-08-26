@@ -1,0 +1,333 @@
+---
+title: "Statistical Thinking - Statistical Tests"
+author: "Bastian Beggel"
+output:
+  html_document: 
+    toc: yes
+    toc_float: yes
+    fig_caption: yes
+    highligh: pygments
+    theme: cosmo
+    number_sections: yes
+  html_notebook:
+    highlight: pygments
+    number_sections: yes
+    theme: cosmo
+    toc: yes
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+# Load Libraries
+
+
+```{r setup, include=TRUE, echo=TRUE, message=FALSE}
+#knitr::opts_chunk$set(echo = TRUE)
+ 
+#Vor der ersten Ausfürung müssen die Pakete installiert werden. Das kann bis zu 10 Minuten dauern. Bitte installieren Sie die Packages über diesen Befehl und nicht über RStudio. 
+#install.packages(c("ggplot2", "knitr","rmarkdown","markdown","colorspace"), type= "binary")
+
+
+# Arbeiten mit RStudio 
+# STRG +SHIFT + RETURN = ganzer chunk
+# STRG + RETURN = Zeile Ausführen / markierten Bereich ausführen
+
+# Rmd bearbeiten
+library(knitr)
+library(rmarkdown)
+library(markdown)  
+
+# plots 
+library(ggplot2)
+library(colorspace)
+
+# Farbpaletten
+library(RColorBrewer)
+
+# Schöne Farbpalette definieren
+myPalette <- brewer.pal(5, "YlGn")
+# Ausgabe von double-Werte mit  zwei Stellen hinter dem Komma
+options(digits=3)
+
+myTheme <- theme_bw() +  
+  theme(text = element_text(size=16),
+          axis.line = element_line(colour = "black"),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.border = element_blank(),
+    panel.background = element_blank())
+
+```
+
+
+# Statistical tests 
+
+This notebook shows the usage of the two most fundamental statistical tests:
+* [Fisher's exact test](https://en.wikipedia.org/wiki/Fisher%27s_exact_test)
+* [Student's t-test](https://en.wikipedia.org/wiki/Student%27s_t-test)
+
+## Fisher's exact test
+
+Fisher's exact test is a statistical significance test used in the analysis of contingency tables create by two categorical variables. 
+
+Here the test is used to test for statistical significance of UC Berkeley gender bias.
+
+
+```{r}
+
+gender_bias  = matrix (NA, nrow = 2, ncol = 2)
+gender_bias  [1,1] = 3714
+gender_bias  [1,2] = 4728
+
+gender_bias  [2,1] = 1512
+gender_bias  [2,2] = 2809
+
+x <- fisher.test (gender_bias )
+x$p.value
+
+# chisq.test is an alternative for larger datasets
+x <- chisq.test(gender_bias )
+x$p.value
+```
+
+### Exercise:
+
+* Perform a fisher.test to test the effectiveness of a new drug Y compared to an existing drug X. 
+Use the following data. 
+    * Drug Y were taken by 100 study participants, 45 of which were cured.
+    * Drug X were taken by 125 study participants, 33 of which were cured.
+
+* What can go wrong with studies like these? What standards have to be applied for the study results to be reliable. 
+    * [Randomized controlled trial](https://en.wikipedia.org/wiki/Randomized_controlled_trial) 
+    * [Randomized double blind placebo control studies, the “Gold Standard” in intervention based studies](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3505292/) 
+    * [Parachute](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC300808/#!po=2.77778)
+    * [A/B Testing](https://en.wikipedia.org/wiki/A/B_testing)
+
+
+
+```{r}
+
+drugs  = matrix (NA, nrow = 2, ncol = 2)
+drugs  [1,1] = 45
+drugs  [1,2] = 100- 45
+
+drugs  [2,1] = 33
+drugs  [2,2] = 125-33
+
+x <- fisher.test (drugs )
+
+x$p.value
+```
+
+
+
+# Fisher's exact test for the heart_failure dataset
+
+Als Beispieldaten verwenden wir den Datensatz *heart_failure*. Die Daten
+sind
+(Kaggle)[<https://www.kaggle.com/datasets/fedesoriano/heart-failure-prediction>]
+entnommen.
+
+
+```{r daten, message=FALSE, echo=TRUE}
+
+## Load data from current directory
+heart_failure <- read.csv("heart_failure.csv")
+
+# Show the first 5 rows
+head(heart_failure)
+
+# The table function provides a quick overview of the distribution of a categorical variable  
+table(heart_failure$HeartDisease)
+
+table(heart_failure$Sex)
+
+
+# The table function can also generate contingency table
+# Is there a statistical relationship?
+table(heart_failure$Sex,heart_failure$HeartDisease)
+
+
+x <- fisher.test (table(heart_failure$Sex,heart_failure$HeartDisease))
+
+x$p.value
+
+fisher.test (table(heart_failure$ChestPainType,heart_failure$HeartDisease))
+
+```
+
+
+
+
+## t.test
+
+Test for different mean values of two numeric distributions. 
+
+* e.g. grades per gender
+* e.g. time to failure for production batches
+
+
+
+
+### t.test for heart_failure 
+
+```{r t_test_heart_failure, message=FALSE, echo=TRUE}
+
+## Load data from current directory
+heart_failure <- read.csv("heart_failure.csv")
+
+# Show the first 5 rows
+head(heart_failure)
+
+# A histogram provides a good overview of the data 
+  ggplot(heart_failure, aes(x = Age)) + 
+    geom_histogram(binwidth =2, fill =myPalette[3],colour = "black" )+
+    facet_wrap(~ HeartDisease, ncol=1) + 
+   myTheme +
+    labs ( title = "Frequency Histogram: HeartDisease vs Age" )  +
+          xlab ("Age") +
+          ylab  ("count")
+
+# Get the vector of age values for healthy and not healthy
+age_healthy <- heart_failure$Age[ heart_failure$HeartDisease ==0 ]
+age_sick <- heart_failure$Age[ heart_failure$HeartDisease ==1 ]
+
+# Here are the means. Are these statistically different? 
+mean(age_healthy)
+mean(age_sick)
+
+x <- t.test (age_healthy, age_sick  )
+
+x$p.value
+
+
+
+```
+
+
+
+### t.test for generated data 
+
+```{r}
+
+# set parameters for data generation
+n_samples_1 = 1000
+n_samples_2 = 1000
+
+mean_1 = 4.0
+mean_2 = 3.9
+sd_1 = 0.5
+sd_2 = 0.5
+
+# generate data 
+values_1 = rnorm (n_samples_1,mean_1, sd_1 )
+values_2 = rnorm (n_samples_2,mean_2, sd_2 )
+
+plot_df = data.frame (
+      group = c(rep("A", n_samples_1) ,rep("B",n_samples_2) ) 
+      , values = c(values_1,values_2)  )
+
+# plot data
+ggplot(plot_df, aes( values, group =group ,colour = group,fill = group )) +
+  geom_density(alpha =0.2)
+
+# test for statistical significance 
+  
+x<- t.test (values_1,values_2)
+x$p.value
+
+
+
+```
+### Exercise:
+Test for statistical significance with the following configurations an interpet the resulting p-value. What did you observe? 
+
+* A
+    * n_samples = 100
+    * mean_1 = 4.0
+    * mean_2 = 3.9
+    * sd_1 = 0.1
+    * sd_2 = 0.1
+* B
+    * n_samples = 10
+    * mean_1 = 4.0
+    * mean_2 = 3.9
+    * sd_1 = 0.1
+    * sd_2 = 0.1
+* C
+    * n_samples = 100
+    * mean_1 = 4.0
+    * mean_2 = 3.9
+    * sd_1 = 0.5
+    * sd_2 = 0.5
+* D
+    * n_samples = 1000
+    * mean_1 = 4.0
+    * mean_2 = 3.9
+    * sd_1 = 0.5
+    * sd_2 = 0.5
+
+
+# How valuable is statistical significance for prediction?
+
+```{r}
+
+# set parameters for data generation
+n_samples_1 = 1000
+n_samples_2 = 1000
+mean_1 = 3.9
+mean_2 = 4.0
+sd_1 = 0.1
+sd_2 = 0.1
+
+# generate data 
+values_1 = rnorm (n_samples_1,mean_1, sd_1 )
+values_2 = rnorm (n_samples_2,mean_2, sd_2 )
+
+plot_df = data.frame (
+      group = c(rep("A", n_samples_1) ,rep("B",n_samples_2) ) 
+      , values = c(values_1,values_2)  )
+
+# plot data
+ggplot(plot_df, aes( values, group =group ,colour = group,fill = group )) +
+  geom_density(alpha =0.2)
+
+# test for statistical significance 
+  
+print (t.test (values_1,values_2)$p.value)
+
+
+# a cutoff of in the middle of the two means yields an accuracy of ???
+cutoff = (mean_1 + mean_2 ) /2
+
+accuracy = (sum(ifelse(values_1 < cutoff,1,0)) + sum(ifelse(values_2 >= cutoff,1,0))) / (n_samples_1+ n_samples_2)  
+
+print (paste("Prediction Accuracy with cutoff ",cutoff, ": " ,accuracy ))
+
+
+```
+
+### Exercise 
+* Build a classifier to separate groups "A" and "B" with high accuracy. What is the best cutoff? 
+* How does the cutoff depend on n_samples_1 and n_samples_2?
+
+
+```{r}
+
+
+cutoffs <- seq (2,10,length.out =1000)
+accuracy <- rep (0, length(cutoffs))
+
+for (i in 1:length(cutoffs)) {
+    # enter solution here 
+    
+}
+ 
+ plot(cutoffs, accuracy)
+ 
+ idx_best = which.max (accuracy)
+ print (paste("Best cutoff value " ,cutoffs[idx_best] , "yields accuracy of" ,accuracy[idx_best] ))
+ 
+```
+
