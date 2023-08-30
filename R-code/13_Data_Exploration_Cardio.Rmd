@@ -1,0 +1,746 @@
+---
+title: "Data Exploration - Cardiovascular Study Dataset"
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+editor_options:
+  chunk_output_type: console
+  markdown: 
+    wrap: 72
+---
+
+# Exploratory data analysis
+
+In statistics, exploratory data analysis (EDA) is an approach of analyzing data sets to summarize their main characteristics, often using data visualization and statistical test.
+
+- Univariate analysis (exploring each single variable) 
+  - Categorical/ numerical (values, scales) 
+  - Business understanding, Naming, Units
+  - Outliers/ missing values, data quality
+- Perform data preparation/ data cleaning
+- Visualization is key to identify important pattern in data
+  - Using bar plots, histograms, density plots, box plots, scatter plots, regression lines.
+- Bivariate analysis (exploring combinations of  two variables)
+  - Correlation with response (Compute p-values to show correlation with the response)
+  - Correlate each variable with each other
+- Generate summary table that represents the key findings of your analysis. 
+
+
+# Links (Getting Started)
+
+-   [Markdown
+    Tuorial](https://rmarkdown.rstudio.com/authoring_basics.html)
+-   [Markdown
+    Cheatsheet](https://www.rstudio.com/wp-content/uploads/2016/03/rmarkdown-cheatsheet-2.0.pdf)
+-   [R for Data Science](https://r4ds.had.co.nz/data-visualisation.html)
+-   [R Introduction](https://cran.r-project.org/doc/manuals/R-intro.pdf)
+
+# Load libraries and set configurations
+
+```{r setup, include=TRUE, echo=TRUE, message=FALSE}
+#knitr::opts_chunk$set(echo = TRUE)
+ 
+#Vor der ersten Ausfürung müssen die Pakete installiert werden. Das kann bis zu 10 Minuten dauern. Bitte installieren Sie die Packages über diesen Befehl und nicht über RStudio. 
+#install.packages(c("ggplot2", "knitr","rmarkdown","markdown","colorspace","magrittr"), type= "binary")
+
+
+# Arbeiten mit RStudio 
+# STRG +SHIFT + RETURN = ganzer chunk
+# STRG + RETURN = Zeile Ausführen / markierten Bereich ausführen
+
+# Rmd bearbeiten
+library(knitr)
+library(rmarkdown)
+library(markdown)  
+
+# plots 
+library(ggplot2)
+library(colorspace)
+
+# Farbpaletten
+library(RColorBrewer)
+
+# use %>%
+library("magrittr")
+
+
+
+# Schöne Farbpalette definieren
+myPalette <- brewer.pal(5, "YlGn")
+# Ausgabe von double-Werte mit  zwei Stellen hinter dem Komma
+options(digits=3)
+
+myTheme <- theme_bw() +  
+  theme(text = element_text(size=12),
+          axis.line = element_line(colour = "black"),
+    #panel.grid.major = element_blank(),
+    #panel.grid.minor = element_blank(),
+    #panel.border = element_blank(),
+    #panel.background = element_blank()
+    )
+```
+
+## Datensatzbeschreibung
+
+[Source](https://www.kaggle.com/christofel04/cardiovascular-study-dataset-predict-heart-disea)
+
+The dataset is publicly available on the Kaggle website, and it is from
+an ongoing cardiovascular study on residents of the town of Framingham,
+Massachusetts. The classification goal is to predict whether the patient
+has 10-year risk of future coronary heart disease (CHD).The dataset
+provides the patients' information. It includes over 4,000 records and
+15 attributes. Variables Each attribute is a potential risk factor.
+There are both demographic, behavioral and medical risk factors.
+
+Demographic: 
+
+- Sex: male or female("M" or "F") 
+- Age: Age of the patient;(Continuous - Although the recorded ages have been truncated to whole numbers, the concept of age is continuous) Behavioral 
+-   is_smoking: whether or not the patient is a current smoker ("YES" or
+"NO") 
+-   Cigs Per Day: the number of cigarettes that the person smoked on
+average in one day.(can be considered continuous as one can have any
+number of cigarettes, even half a cigarette.) Medical( history) 
+-   BP Meds: whether or not the patient was on blood pressure medication
+(Nominal) 
+-   Prevalent Stroke: whether or not the patient had previously
+had a stroke (Nominal) 
+-   Prevalent Hyp: whether or not the patient was
+hypertensive (Nominal) 
+-   Diabetes: whether or not the patient had
+diabetes (Nominal) Medical(current) 
+-   Tot Chol: total cholesterol level
+(Continuous) 
+-   Sys BP: systolic blood pressure (Continuous) 
+-   Dia BP: diastolic blood pressure (Continuous) 
+-   BMI: Body Mass Index (Continuous) 
+-   Heart Rate: heart rate (Continuous - In medical research,
+variables such as heart rate though in fact discrete, yet are considered
+continuous because of large number of possible values.) 
+-   Glucose: glucose level (Continuous) Predict variable (desired target) 
+-   10 year risk of coronary heart disease CHD(binary: "1", means "Yes", "0" means
+"No")
+
+# Load Data
+
+```{r}
+
+
+cardio_raw= read.csv("cardio.csv",sep = ",")
+
+
+```
+
+# Descriptive Statistics
+
+R's str function gives me a look at the data types in the "cars"
+dataset, the head function prints the first 5 rows. The summary function
+lets me see basic summary statistics for each column.
+
+Show first 5 rows.
+
+```{r}
+head(cardio_raw)
+```
+
+Show structure information about the dataframe.
+
+```{r}
+str(cardio_raw)
+```
+
+Show summary statistics per column.
+
+```{r}
+summary(cardio_raw)
+```
+
+# Cleaning and prepping the dataset
+
+Based on the results of the str(cardio) function above, several issues
+with how the read.csv function imported the data were identified that
+need to be cleaned up before going in-depth with the analysis:
+
+```{r}
+
+## id column is useless for analysis 
+cardio <- cardio_raw[ , -1 ]
+
+## education is a categorical variable with values 1 to 4 (not a numeric value)
+cardio$education <- factor(cardio$education)
+
+## lets spell out the gender flag 
+cardio$sex <- ifelse (cardio$sex == "F", "female", "male")
+
+## lets spell out the smoking flag 
+cardio$is_smoking <- ifelse (cardio$is_smoking == "YES", "smoking", "not smoking")
+## rename column is_smoking
+colnames(cardio)[4] <- "smoking" 
+
+## rename column BPMeds
+colnames(cardio)[6] <- "BloodPresMed" 
+
+## lets spell out the BloodPresMed flag 
+cardio$BloodPresMed <- ifelse (cardio$BloodPresMed == 0, "no BloodPresMed", "BloodPresMed")
+
+## lets spell out the stroke flag 
+cardio$prevalentStroke <- ifelse (cardio$prevalentStroke == 0, "no stroke", "stroke")
+colnames(cardio)[7] <- "stroke" 
+
+
+## rename prevalentHyp      
+colnames(cardio)[8] <- "hypertensive" 
+cardio$hypertensive <- ifelse (cardio$hypertensive == 0, "no hypertensive", "hypertensive")
+
+## spell out the diabetes flag 
+cardio$diabetes <- ifelse (cardio$diabetes == 0, "no diabetes", "diabetes")
+
+
+## this is the target variable - spell out the outcome 
+cardio$TenYearCHD <- ifelse (cardio$TenYearCHD == 0, "healthy", "CHD")
+## rename target variable 
+colnames(cardio)[ncol(cardio)] <- "target" 
+
+
+
+## create subsets for easy access 
+cardio_chd = subset(cardio,target == "CHD" )
+cardio_healthy = subset(cardio,target == "healthy" )
+
+
+```
+
+# Univariate Analysis and Correlation with Response
+
+In this section I will take a look at the distribution of values for
+each variable in the dataset by creating histograms, boxplots or density
+plots for numerical variables and barplots for categorical variables
+using ggplot2. We are trying to find out if there is more data to clean
+up, including outliers or extraneous values. This will also help us to
+identify any relationships between each variable and our outcome that
+are worth investigating further.
+
+## Age Distribution
+
+```{r}
+# By Age
+cardio %>%
+  ggplot( aes(x = age)) + 
+    geom_histogram(binwidth = 2, fill =myPalette[3],colour = "black" )+
+   myTheme +
+    labs ( title = "Frequency Histogram: Age" )  +
+          xlab ("Age") +
+          ylab  ("nbr patients")
+
+```
+
+**Interpretation:**
+
+The majority of patients is between 40 and 60 years old. Very few
+younger (\<35) or older (\>65) patients exist.
+
+## Age Distribution by Response
+
+```{r}
+# By Age and Target using histograms 
+cardio %>%
+  ggplot( aes(x = age, fill = target)) + 
+    geom_histogram(binwidth =2)+
+    facet_wrap(~ target, ncol=1) + 
+    myTheme +
+    labs ( title = "Frequency Histogram: Age vs Target" ) +
+          xlab ("Age") +
+          ylab ("nbr Patients")
+
+
+# By Age and Target using density plots 
+cardio %>%
+  ggplot( aes(x = age, fill = target)) + 
+    geom_density(alpha = 0.4)+
+    myTheme +
+    labs ( title = "Density: Age vs Target" ) +
+          xlab ("Age") +
+          ylab ("Density")
+
+
+#Alternative:  By Age and Target using boxplots
+cardio %>%
+  ggplot( aes(x = target, y= age, fill = target)) + 
+    geom_boxplot()+
+     myTheme +
+    labs ( title = "Boxplot: Age vs. Target") +
+    xlab ("Target") +
+    ylab ("Age")
+
+
+
+age_pvalue = t.test(cardio_chd$age, cardio_healthy$age)$p.value
+
+```
+
+**Interpretation:**
+
+The age has a significant influence on the outcome. Older patients
+(about 50 to 60 years) are more in danger of developing CHD compared to
+younger patients (\< 50 years).
+
+But the predictive power of age is limited as both distributions overlap
+in the range of 45 to 55 years.
+
+The age is statistical significant with a p-value of
+`r toString(age_pvalue)`.
+
+## Education distribution
+
+```{r}
+# By education - absolute frequencies 
+cardio %>%
+  ggplot( aes(x = education  )) +  
+    geom_bar()+
+  myTheme +
+    labs ( title = "Frequency Histogram: Education " )  +
+          xlab ("Education") +
+          ylab  ("nbr of patients")
+
+
+# By education - relative frequencies 
+##  "y= ..prop.., group = 1 line" converts absolute counts to relative frequencies
+cardio %>%
+  ggplot( aes(x = education , y= ..prop.., group = 1)) +  
+    geom_bar()+
+  myTheme +
+    labs ( title = "Frequency Histogram: Education " )  +
+          xlab ("Education") +
+          ylab  ("% of patients")
+
+
+
+education_level1 =round(table(cardio$education)["1"]/nrow(cardio) *100,1)
+education_level2 =round(table(cardio$education)["2"]/nrow(cardio) *100,1)
+education_level3 =round(table(cardio$education)["3"]/nrow(cardio) *100,1)
+education_level4 =round(table(cardio$education)["4"]/nrow(cardio) *100,1)
+
+```
+
+**Interpretation:**
+
+About `r toString(education_level1+education_level2)`% patients have a rather low education level of (\<=2). Only
+`r toString(education_level4)`% patient has the highest education level
+4.
+
+## Education Distribution by Response
+
+```{r}
+
+
+# By Education  and Target 
+##  "y= ..prop.., group = target line" converts absolute counts to relative frequencies standardized by target (relative frequencies sum up to 1 within each value of target)
+cardio %>%
+  ggplot( aes(x = education, fill = target, y= ..prop.., group = target)) + 
+    geom_bar()+
+    facet_wrap(~ target, ncol = 1) + 
+    myTheme +
+    labs ( title = "Frequency Histogram: Education vs Target" ) +
+          xlab ("Education") +
+          ylab ("Relative Frequency")
+
+
+# By Education  and Target
+##  "y= ..prop.., group = education line" converts absolute counts to relative frequencies standardized by target (relative frequencies sum up to 1 within each value of education)
+## standardizing wrt. education provides relative frequencies that can be interpreted as risk factors. e.g. provided that your education level is 1, then your change of developing chd is e.g. 18.4% 
+
+cardio %>%
+  ggplot( aes(x = target, fill = education, y= ..prop.., group = education)) + 
+    geom_bar()+
+    facet_wrap(~ education, ncol = 1) + 
+    coord_flip()+
+    myTheme +
+    labs ( title = "Frequency Histogram: Education vs Target" ) +
+          xlab ("Education") +
+          ylab ("Relative Frequency")
+
+education_p_value <- fisher.test(table (cardio$target, cardio$education))$p.value
+
+# compute risks 
+## prop.table (, 2 ) compute relative frequencies standardized by columns (columns sum up to 1.0)
+prop.table(table (cardio$target, cardio$education),2)
+
+
+
+```
+
+There is a week statistical correlation (p-value
+`r toString(education_p_value)`) between education and CHD. 
+Education level 1 patiens have the highest risk (18.4%) of developing CHD. Other education levels have similar smaller risks (11.9%, 12.8% and 13.5%).
+
+
+
+## Gender Distribution
+
+```{r}
+# By sex
+cardio %>%
+  ggplot( aes(x = sex, fill = sex)) + 
+    geom_bar()+
+    myTheme +
+    labs ( title = "Distribution of Sex" )  +
+          xlab ("Sex") +
+          ylab  ("nbr of patients")
+
+t_femail_count =round(table(cardio$sex)["female"]/nrow(cardio) *100,1)
+
+
+
+```
+
+**Interpretation:** 
+
+There are about `r toString(t_femail_count)` %
+female patients in the study.
+
+## Gender Distribution by Response
+
+```{r}
+# By sex and target in absolute frequencies 
+cardio %>%
+  ggplot( aes(x = sex, fill = sex)) + 
+    geom_bar()+
+    facet_wrap(~target) + 
+    myTheme +
+    labs ( title = "Gender by Response" )  +
+          xlab ("Gender") +
+          ylab  ("nbr of patients")
+
+# By sex and target in relative frequencies standarizes by gender
+cardio %>%
+  ggplot( aes(x = target, fill = sex, y= ..prop.., group = sex)) + 
+    geom_bar()+
+    facet_wrap(~ sex, ncol = 1) + 
+    coord_flip()+
+    myTheme +
+    labs ( title = "Gender by Response" ) +
+          xlab ("Gender") +
+          ylab ("Relative Frequency")
+
+
+prop.table(table (cardio$target, cardio$sex),2)
+
+t_mail_chd_risk = prop.table(table (cardio$target, cardio$sex),2)["CHD","male"]
+t_femail_chd_risk = prop.table(table (cardio$target, cardio$sex),2)["CHD","female"]
+
+sex_p_value = fisher.test(table(cardio$target, cardio$sex))$p.value
+
+```
+
+**Interpretation:**
+
+Men are at higher risk of developing CHD. The risk for men of developing
+CHD is `r toString(t_mail_chd_risk)` %, while the risk for females is
+only `r toString(t_femail_chd_risk)` %.
+
+The effect of the gender is statistically signification (p-value of
+`r toString(sex_p_value)`).
+
+##Cigs Per Day
+
+```{r}
+# By Cigs Per Day
+cardio %>%
+  ggplot( aes(x =cigsPerDay ,fill=smoking))  + 
+    geom_bar()+
+    myTheme +
+    labs ( title = "Frequency Histogram: cigsPerDay" )  +
+          xlab ("cigsPerDay") +
+          ylab  ("nbr of patients")
+
+```
+
+**Interpretation:**
+
+"Cigs Per Day" shows the number of cigarettes per day.
+
+Values range from 1 to 60 cigarettes per day. The most common value is
+20 cigarettes per day.
+
+## Cigs Per Day Distribution by Response
+
+```{r}
+
+cardio %>%
+  ggplot( aes(x = cigsPerDay, fill = target)) + 
+    geom_histogram(binwidth =   4)+
+    facet_wrap(~ target, ncol = 1) + 
+    myTheme +
+    labs ( title = "Frequency Histogram: CigsPerDay vs Target" ) +
+          xlab ("cigsPerDay") +
+          ylab ("nbr of patients")
+
+
+#Alternative:  By cigsPerDay and Target using boxplots
+cardio %>%
+  ggplot( aes(x = target, y= cigsPerDay, fill = target)) + 
+    geom_boxplot()+
+     myTheme +
+    labs ( title = "Boxplot: cigsPerDay vs. Target") +
+    xlab ("Target") +
+    ylab ("cigsPerDay")
+
+
+
+cigsPerDay_p_value = t.test(cardio_chd$cigsPerDay, cardio_healthy$cigsPerDay)$p.value
+
+smoking_p_value = fisher.test(cardio$smoking, cardio$target)$p.value
+
+
+#Smoking is redundant to cigsPerDay. We need to check if the information is consistent. 
+table (cardio$smoking, cardio$cigsPerDay > 0 )
+# ==> The information is consistent. Thus, it might not be necessary to futher investigate smoking. 
+
+
+```
+
+The number of cigarettes per day has an effect on CHD.
+
+Now we try to identify the number of cigarettes per day that has the
+highest impact.
+
+```{r}
+
+
+cutoffs <- seq(1,40)
+cigsPerDay_pvalues = rep (NA, length(cutoffs))
+
+for (i in 1:length(cutoffs)) {
+   cigsPerDay_pvalues[i]= fisher.test(table(cardio$target, cardio$cigsPerDay >= cutoffs[i] ))$p.value
+}
+
+data.frame(cutoffs = cutoffs, pvalue = cigsPerDay_pvalues ) %>%
+  ggplot(aes (cutoffs,pvalue )) + 
+  myTheme +
+  geom_line()+
+   labs ( title = "P-values of cigsPerDay vs target" ) +
+          xlab ("cigsPerDay") +
+          ylab ("p-value")
+
+
+min_idx <- which.min (cigsPerDay_pvalues)
+
+print (paste("With a cutoff of <= " ,cutoffs[min_idx] , "cigsPerDay the strongest effect was found. The p-value was " ,cigsPerDay_pvalues[min_idx] ))
+
+
+
+```
+
+**Interpretation:** The individuals who smoke less than 18 cigarettes per day
+smoke have a low risk of developing CHD.
+
+
+
+
+##BloodPresMed
+
+```{r}
+# BloodPresMed
+cardio %>%
+  ggplot( aes(x = BloodPresMed,fill=BloodPresMed)) + 
+    geom_bar()+
+   myTheme+
+    labs ( title = "Frequency Histogram: BloodPresMed" )  +
+          xlab ("BloodPresMed") +
+          ylab  ("nbr of patients")
+
+
+t_noBPmed_count =round(table(cardio$BloodPresMed)["no BloodPresMed"]/nrow(cardio) *100,1)
+
+
+```
+
+**Interpretation:**
+
+`r toString(t_noBPmed_count)` of the participants do not take
+blood pressure medication..
+
+```{r}
+
+subset(cardio, !is.na(BloodPresMed)) %>%
+  ggplot( aes(x = BloodPresMed,fill=BloodPresMed)) + 
+    geom_bar()+
+  facet_wrap(~target) + 
+  myTheme +
+  theme(legend.position="bottom")+ 
+  coord_flip()+
+    labs ( title = "Frequency Histogram: BloodPresMed" )  +
+          xlab ("BloodPresMed") +
+          ylab  ("nbr of patients")
+
+
+# By BloodPresMed  and target in relative frequencies standardized by BloodPresMed
+subset(cardio, !is.na(BloodPresMed)) %>%
+  ggplot( aes(x = target, fill = BloodPresMed, y= ..prop.., group = BloodPresMed)) + 
+    geom_bar()+
+    facet_wrap(~ BloodPresMed, ncol = 1) + 
+    coord_flip()+
+    myTheme +
+    labs ( title = "BloodPresMed by Response" ) +
+          xlab ("BloodPresMed") +
+          ylab ("Relative Frequency")
+
+
+
+prop.table(table (cardio$target, cardio$BloodPresMed),2)
+
+t_BPmed_chd_count = prop.table(table (cardio$target, cardio$BloodPresMed),2)["CHD","BloodPresMed"]
+t_noBPmed_chd_count = prop.table(table (cardio$target, cardio$BloodPresMed),2)["CHD","no BloodPresMed"]
+
+
+BloodPresMed_p_value=fisher.test(table(cardio$target, cardio$BloodPresMed))$p.value
+
+```
+
+**Interpretation:**
+
+The risk of developing CHD for participants taking blood pressure medication is
+is `r toString(t_BPmed_chd_count)`%, while the risk of developing CHD for participants not taking 
+blood pressure medication is `r toString(t_noBPmed_chd_count)`%.
+
+Taking blood pressure medication has a statistically significant effect. The P-value
+is `r toString(BloodPresMed_p_value)`.
+
+
+
+## Feature Summary 
+
+At the conclusion of the exploratory data analysis, it is essential to present a comprehensive overview encompassing all features along with their key characteristics. This summarization serves as a conclusive recap, facilitating effective communication of findings. Moreover, it serves as a convenient point of reference, enabling swift and convenient clarification of the roles and significance of each individual variable."
+
+
+```{r}
+# create an empty dataframe with one row per feature. 
+feature_summary <- data.frame(feature = colnames(
+                                   cardio)[1:ncol(cardio)-1]
+                                   , type =""
+                                   , effect=""
+                                   ,p_value =NA
+                                   ,nbr_missing=NA )
+# set row.names as feature name. This was each row can be indexes with the feature name
+row.names(feature_summary) <- feature_summary$feature
+
+# add information for age
+feature_summary["age",c("type", "effect","p_value" ) ] <-  c("categorical","higer age -> higher risk" ,age_pvalue  )
+
+# add information for education
+feature_summary["education",c("type", "effect","p_value" ) ]<-  c("categorical","education level 1 -> higer risk" ,education_p_value )
+
+# add information for sex
+feature_summary["sex",c("type", "effect","p_value" ) ]<-  c("categorical","men -> higer risk" ,sex_p_value )
+
+# add information for smoking
+feature_summary["smoking",c("type", "effect","p_value" ) ]<-  c("numerical","smoking -> higer risk" ,smoking_p_value )
+
+# add information for cigsPerDay
+feature_summary["cigsPerDay",c("type", "effect","p_value" ) ]<-  c("numerical","> 18 cigs -> higer risk" ,cigsPerDay_p_value )
+
+# add information for BloodPresMed
+feature_summary["BloodPresMed",c("type", "effect","p_value" ) ]<-  c("categorical","BloodPresMed -> higer risk" ,BloodPresMed_p_value )
+
+
+## TODO: add all features here 
+
+
+## fill in nbr_missing column 
+for (ir in 1:nrow(feature_summary)) {
+    tmp_col <- cardio[,feature_summary$feature[ir] ]
+    feature_summary$nbr_missing[ir] <- nrow(cardio) -  table(is.na(tmp_col))["FALSE"]
+}
+
+knitr::kable(feature_summary)
+
+
+
+
+
+```
+
+
+# Pairwise correlation analysis
+
+Pairwise correlation analysis, often performed using the PerformanceAnalytics package in R, is a valuable statistical technique used to understand the relationships between pairs of variables in a dataset. This analysis calculates correlation coefficients, typically Pearson's correlation coefficient, between each combination of two variables. 
+
+-  Identify Relationships: Pairwise correlation analysis helps you identify potential relationships between variables. If two variables have a high positive correlation (close to +1), it suggests that they tend to increase together. A high negative correlation (close to -1) indicates that as one variable increases, the other tends to decrease.
+
+-  Multicollinearity Detection: In regression analysis, multicollinearity occurs when two or more independent variables are highly correlated. This can lead to unstable coefficient estimates and difficulty in interpreting the model. By identifying highly correlated variables, you can take steps to address multicollinearity issues.
+
+-   Data Cleaning: Correlation analysis can help detect data entry errors or outliers. Unusual observations might lead to spurious correlations, so identifying and dealing with outliers is important.
+
+-  Visualization: The scatterplot matrix resulting from pairwise correlation analysis is a useful visualization tool. It provides a quick overview of the relationships among variables, helping you identify patterns and potential outliers.
+
+-  Report Findings: If you're communicating your findings to a non-technical audience, visualizations from a pairwise correlation analysis can be much more accessible than complex statistical analyses.
+
+
+
+```{r , warning = FALSE,message = FALSE}
+
+library("PerformanceAnalytics")
+
+# the chart.Correlation requires numeric columns, thus, all categorical variables need to be converted 
+my_data <- cardio
+for (i in c(2,3,4,6,7,8,9)) {
+    my_data[,i] = as.numeric(factor(my_data[,i])) 
+}
+
+my_data$hypertensive <-  as.numeric(factor(cardio$hypertensive)) * (-1)
+
+#table(my_data$hypertensive , cardio$hypertensive)
+
+chart.Correlation(my_data[,1:15], histogram=TRUE, pch=19)
+
+
+```
+
+
+**Interpretation:**
+
+The following strong (> 0.6 or < -0.6) correlations were found: 
+* cigsPerDay and smoking (0.77)
+*  systolic and diastolic blood pressure (0.78)
+* hypertension and systolic blood pressure (-0.70)
+* hypertension and diastolic blood pressure (-0.61)
+* diabetes and glucose levels (-0.62)
+
+
+
+All of these correlations can be expected as these describe known relationships.  
+
+
+## Compute correlation manualy using a linar model 
+```{r}
+## lm fits a least square linear regression model 
+summary(lm ( sysBP ~  diaBP, data = my_data ))
+
+
+# cor computes the correlation between two numeric vectors
+cor (my_data$sysBP,my_data$diaBP)
+
+```
+
+
+## Alternative Packages for pairwise correlations
+
+### The ggcorrplot package 
+```{r}
+
+library(ggcorrplot)
+
+# compute pairwise correlations using the cor function 
+r <- cor(my_data[,1:15], use="complete.obs")
+round(r,2)
+
+ggcorrplot(r, 
+           hc.order = TRUE, 
+           type = "lower",
+           lab = TRUE)
+
+```
+
+
+

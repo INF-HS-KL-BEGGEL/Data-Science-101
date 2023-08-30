@@ -39,6 +39,7 @@ R Einstieg:
 
 -   <https://www.youtube.com/watch?v=tyvEHQszZJs>
 -   <https://www.datamentor.io/r-programming/reserved-words/>
+-   <https://cran.r-project.org/doc/manuals/R-intro.pdf>
 
 R Cheat Sheets:
 
